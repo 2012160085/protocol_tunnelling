@@ -25,13 +25,14 @@ class IP_CATCH(threading.Thread):
                 
 class IP_SPOOF(threading.Thread):
     def __init__(self,addr,rule,queue):
-        print(self.name + " is running")
+        
         self.queue = queue
         self.rule = rule
         self.addr = addr
         threading.Thread.__init__(self, name=self.rule+'_SPOOF_'+addr)
         
     def run(self):
+        print(self.name + " is running")
         while True:
             try:
                 data = self.queue.get(False)
@@ -48,7 +49,20 @@ class IP_SPOOF(threading.Thread):
                     print("[SPOOF]<<<<<<<<",packet)
                 #sendp(packet, iface="eth0
                 
-
+class ICMP_IN(threading.Thread):
+    def __init__(self,addr,queue):
+        self.addr = addr
+        self.queue = queue
+        threading.Thread.__init__(self, name='ICMP_IN_'+addr)
+        
+    def run(self):
+        print(self.name + " is running")
+        with pydivert.WinDivert("inbound && icmp && ip.SrcAddr == " + self.addr) as w:
+            for packet in w:
+                data = packet.icmpv4.payload
+                print("<<<<"+self.addr+"<<<<",data)
+                self.queue.put(data)
+                
 class ICMP_OUT(threading.Thread):
     def __init__(self,addr,queue):
         self.addr = addr
@@ -329,4 +343,4 @@ def pub():
     node2.start()
     
 if __name__ == '__main__':
-    pc101()
+    pc100()
