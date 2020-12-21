@@ -14,23 +14,22 @@ class IP_CATCH(threading.Thread):
         self.addr = addr
         self.queue = queue
         self.rule = rule
-        self.queue_out = queue_out
         threading.Thread.__init__(self, name=self.rule+'_CATCH_'+addr)
         
     def run(self):
         print(self.name + " is running")
-        with pydivert.WinDivert(self.rule+" && ip.DstAddr == " + self.addr) as w:
+        with pydivert.WinDivert(self.rule.lower()+" && ip.DstAddr == " + self.addr) as w:
             for packet in w:
                 print("[CATCH]",self.rule,packet)
                 self.queue.put(packet)
                 
 class IP_SPOOF(threading.Thread):
-    def __init__(self,addr_origin,addr,rule,queue):
-        self.addr_origin = addr_origin
+    def __init__(self,addr,rule,queue):
+        print(self.name + " is running")
         self.queue = queue
         self.rule = rule
         self.addr = addr
-        threading.Thread.__init__(self, name=self.rule+'_SPOOF_'+addr_origin)
+        threading.Thread.__init__(self, name=self.rule+'_SPOOF_'+addr)
         
     def run(self):
         while True:
@@ -210,13 +209,13 @@ def TCP_route(addr,port,queue_in,queue_out,open_socket = False):
         print("waiting connection..")
         conn, c_addr = tcp_socket.accept()
         print("[tcp connected]",c_addr)
-        tcp_out = TCP_OUT(conn=conn,queue = A_B,open_socket=open_socket)
-        tcp_in = TCP_IN(conn=conn,queue = B_A,open_socket=open_socket)
+        tcp_out = TCP_OUT(conn=conn,queue = queue_out,open_socket=open_socket)
+        tcp_in = TCP_IN(conn=conn,queue = queue_in,open_socket=open_socket)
             
     else:
         tcp_socket.connect((addr, port))
-        tcp_out = TCP_OUT(socket=tcp_socket,queue = A_B,open_socket=open_socket)
-        tcp_in = TCP_IN(socket=tcp_socket,queue = B_A,open_socket=open_socket)
+        tcp_out = TCP_OUT(socket=tcp_socket,queue = queue_out,open_socket=open_socket)
+        tcp_in = TCP_IN(socket=tcp_socket,queue = queue_in,open_socket=open_socket)
     return tcp_in,tcp_out
 
 class Node_Connection:
@@ -330,4 +329,4 @@ def pub():
     node2.start()
     
 if __name__ == '__main__':
-    pc100()
+    pc101()
