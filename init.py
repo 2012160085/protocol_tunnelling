@@ -305,7 +305,8 @@ def pc08():
     ip_catch = IP_CATCH(addr2,"INBOUND",A_B)
     ip_spoof = IP_SPOOF(addr2,"OUTBOUND",B_A)
     node1.start()
-    node2.start()
+    ip_spoof.start()
+    ip_catch.start()
 
 def pc100():
     A_B = queue.Queue()
@@ -317,7 +318,7 @@ def pc100():
     proto1 = "TCP"
     node1 = Node_Connection(addr1,proto1,A_B,B_A)
     #addr2 = input("node(2) ip address: ")
-    addr2 = '192.168.123.105'
+    addr2 = '192.168.0.8'
     ip_catch = IP_CATCH(addr2,"OUTBOUND",A_B)
     ip_spoof = IP_SPOOF(addr2,"INBOUND",B_A)
     
@@ -343,4 +344,4 @@ def pub():
     node2.start()
     
 if __name__ == '__main__':
-    pc100()
+    pc08()
