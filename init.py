@@ -1,12 +1,13 @@
 import threading
-from scapy.all import*  
+import scapy 
 import socket
 from scapy.layers.inet import IP
-
+from scapy.layers.l2 import Ether
 import queue
 import os
 if os.name == 'nt':
     import pydivert
+    
 
 
 class IP_CATCH(threading.Thread):
@@ -15,13 +16,22 @@ class IP_CATCH(threading.Thread):
         self.queue = queue
         self.rule = rule
         threading.Thread.__init__(self, name=self.rule+'_CATCH_'+addr)
-        
+    def header(self,src,dst):
+        my_hex = lambda x : x.to_bytes(((x.bit_length() + 7) // 8),"big").hex()
+        src_str = src.split('\.')
     def run(self):
         print(self.name + " is running")
         with pydivert.WinDivert(self.rule.lower()+" && ip.DstAddr == " + self.addr) as w:
             for packet in w:
-                print("[CATCH]",self.rule,packet)
-                self.queue.put(packet)
+
+                _bytes = bytes.fromhex(packet.raw.tobytes().hex())
+                print("[CATCH]",_bytes)
+                #a = IP(_bytes)
+                #print(a)
+                #scapy.sendrecv.send(a)
+                self.queue.put(_bytes)
+                #w.send(packet)
+
                 
 class IP_SPOOF(threading.Thread):
     def __init__(self,addr,rule,queue):
@@ -39,15 +49,17 @@ class IP_SPOOF(threading.Thread):
             except queue.Empty:
                 pass
             else:
-                packet = raw(data)
-                
+                pkt = IP(data)
+                #Direction.OUTBOUND
                 if self.rule == "OUTBOUND":
-                    packet.SrcAddr = self.addr 
-                    print("[SPOOF]>>>>>>>>",packet)
+                    pkt[IP].src = self.addr 
+                    print("[SPOOF]>>>>>>>>",pkt)
+                    
                 if self.rule == "INBOUND":
-                    packet.DstAddr = self.addr
-                    print("[SPOOF]<<<<<<<<",packet)
-                #sendp(packet, iface="eth0
+                    pkt[IP].dst = self.addr
+                    print("[SPOOF]<<<<<<<<",pkt)
+                scapy.sendrecv.send(a)
+
                 
 class ICMP_IN(threading.Thread):
     def __init__(self,addr,queue):
@@ -298,7 +310,7 @@ def pc08():
     addr1 = "192.168.0.5"
     #proto1 = input("node(1) protocol(icmp/tcp): ").upper()
     proto1 = "ICMP"
-    node1 = Node_Connection(addr1,proto1,A_B,B_A)
+    #node1 = Node_Connection(addr1,proto1,A_B,B_A)
     #addr2 = input("node(2) ip address: ")
     addr2 = '192.168.123.100'
     #proto2 = input("node(2) protocol(icmp/tcp): ").upper()
@@ -344,4 +356,4 @@ def pub():
     node2.start()
     
 if __name__ == '__main__':
-    pc08()
+    pc100()
