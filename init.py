@@ -21,11 +21,15 @@ class IP_CATCH(threading.Thread):
         src_str = src.split('\.')
     def run(self):
         print(self.name + " is running")
-        with pydivert.WinDivert(self.rule.lower()+" && ip.DstAddr == " + self.addr) as w:
+        filter_str = ''
+        if self.rule.lower() == "outbound":
+            filter_str = self.rule.lower()+" && ip.DstAddr == " + self.addr
+        elif self.rule.lower() == "inbound":
+            filter_str = self.rule.lower()+" && ip.SrcAddr == " + self.addr
+        with pydivert.WinDivert(filter_str) as w:
             for packet in w:
-
-                _bytes = bytes.fromhex(packet.raw.tobytes().hex())
-                print("[CATCH]",_bytes)
+                _bytes = packet.raw.tobytes()
+                print("[CATCH]",self.rule,_bytes)
                 #a = IP(_bytes)
                 #print(a)
                 #scapy.sendrecv.send(a)
@@ -52,13 +56,14 @@ class IP_SPOOF(threading.Thread):
                 pkt = IP(data)
                 #Direction.OUTBOUND
                 if self.rule == "OUTBOUND":
+                    print(pkt)
                     pkt[IP].src = self.addr 
                     print("[SPOOF]>>>>>>>>",pkt)
                     
                 if self.rule == "INBOUND":
                     pkt[IP].dst = self.addr
                     print("[SPOOF]<<<<<<<<",pkt)
-                scapy.sendrecv.send(a)
+                scapy.sendrecv.send(pkt)
 
                 
 class ICMP_IN(threading.Thread):
@@ -307,15 +312,14 @@ def pc08():
     B_A = queue.Queue()
     
     #addr1 = input("node(1) ip address: ")
-    addr1 = "192.168.0.5"
+    addr1 = "218.239.28.198"
     #proto1 = input("node(1) protocol(icmp/tcp): ").upper()
-    proto1 = "ICMP"
-    #node1 = Node_Connection(addr1,proto1,A_B,B_A)
+    proto1 = "TCP"
+    node1 = Node_Connection(addr1,proto1,A_B,B_A)
     #addr2 = input("node(2) ip address: ")
-    addr2 = '192.168.123.100'
     #proto2 = input("node(2) protocol(icmp/tcp): ").upper()
-    ip_catch = IP_CATCH(addr2,"INBOUND",A_B)
-    ip_spoof = IP_SPOOF(addr2,"OUTBOUND",B_A)
+    ip_catch = IP_CATCH('192.168.0.5',"INBOUND",A_B)
+    ip_spoof = IP_SPOOF('192.168.0.8',"OUTBOUND",B_A)
     node1.start()
     ip_spoof.start()
     ip_catch.start()
@@ -325,14 +329,13 @@ def pc100():
     B_A = queue.Queue()
     
     #addr1 = input("node(1) ip address: ")
-    addr1 = "192.168.123.101"
+    addr1 = "0.0.0.0"
     #proto1 = input("node(1) protocol(icmp/tcp): ").upper()
     proto1 = "TCP"
     node1 = Node_Connection(addr1,proto1,A_B,B_A)
     #addr2 = input("node(2) ip address: ")
-    addr2 = '192.168.0.8'
-    ip_catch = IP_CATCH(addr2,"OUTBOUND",A_B)
-    ip_spoof = IP_SPOOF(addr2,"INBOUND",B_A)
+    ip_catch = IP_CATCH('192.168.0.5',"OUTBOUND",A_B)
+    ip_spoof = IP_SPOOF('192.168.123.100',"INBOUND",B_A)
     
     node1.start()
     ip_catch.start()
@@ -356,4 +359,4 @@ def pub():
     node2.start()
     
 if __name__ == '__main__':
-    pc100()
+    pc100() 
