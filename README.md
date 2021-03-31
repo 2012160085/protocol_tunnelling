@@ -1,5 +1,4 @@
 # protocol_tunnelling
 
-- intercetp, redirect packet
-- hide protocol
-- ip spoofing
+- sends and receives TCP/UDP packets through ICMP payload
+
